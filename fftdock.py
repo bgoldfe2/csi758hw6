@@ -6,6 +6,8 @@ import gogabor as ggb
 from scipy.ndimage.interpolation import shift
 import PIL as pil
 import fpf
+import scipy.misc as sm
+import scipy.fftpack as ft
 
 def BuildDock():
     V=148
@@ -70,6 +72,45 @@ def Roll(image, delta):
     
     return blank
 
+def MakeFPF():
+    V=148
+    H=543
+    X = np.zeros( (2,V*H), complex )
+    cst = np.array([1,1])
+    for i in range(0,2):
+        iname = "boat"+str(i+1)+"bwFilt.png"
+        print("read file ",iname)
+        out = sm.imread(iname,flatten=True)
+        X[i] = ft.fft2( out ).ravel()
+    filt = fpf.FPF( X, cst, 0)
+    print("X shape",X.shape)
+    filt = ft.ifft2( filt.reshape((V,H)))
+    #sm.imsave("filt.png",filt.real)
+    return filt
+
+def MakeBoatCutOut(fname,V,H):
+    # Utility for taking b&w boat cutouts into full size filters
+    cut = sm.imread(fname,flatten=True)
+    filtCut = mg.Plop(cut,(V,H))
+    return filtCut
+
+def FindBoats(img,filt):
+    a = Edge(img)
+    b = Edge(filt)
+    corr = Correlate2d(a,b)
+    return corr    
+
+def Correlate2d( A,B ):
+        a = ft.fft2( A) 
+        b = ft.fft2(B)
+        c = a *  b.conjugate()
+        C = ft.ifft2( c )
+        C = ft.fftshift( C)
+        return C
+ 
+def Edge( data ):
+    a = data[:-1,:-1] - data[1:,1:]
+    return abs(a)
 
 def Driver():
     origrot = sm.imread("boat2a.png",flatten=True)
