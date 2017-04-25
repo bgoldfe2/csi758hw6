@@ -72,17 +72,19 @@ def Roll(image, delta):
     
     return blank
 
-def MakeFPF():
+def MakeFPF(numBoat,cst):
     V=148
     H=543
-    X = np.zeros( (2,V*H), complex )
-    cst = np.array([1,1])
-    for i in range(0,2):
+    X = np.zeros( (numBoat,V*H), complex )
+    #cst = np.array([1,1])
+    for i in range(0,numBoat):
         iname = "boat"+str(i+1)+"bwFilt.png"
         print("read file ",iname)
         out = sm.imread(iname,flatten=True)
         X[i] = ft.fft2( out ).ravel()
-    filt = fpf.FPF( X, cst, 0)
+
+    print("X shape",X.shape)
+    filt = fpf.FPF( X, cst, 1)
     print("X shape",X.shape)
     filt = ft.ifft2( filt.reshape((V,H)))
     #sm.imsave("filt.png",filt.real)
@@ -95,9 +97,10 @@ def MakeBoatCutOut(fname,V,H):
     return filtCut
 
 def FindBoats(img,filt):
-    a = Edge(img)
-    b = Edge(filt)
-    corr = Correlate2d(a,b)
+    #a = Edge(img)
+    #b = Edge(filt)
+    #corr = Correlate2d(a,b)
+    corr = Correlate2d(img,filt)
     return corr    
 
 def Correlate2d( A,B ):
@@ -141,6 +144,11 @@ def Driver():
     # Now use subtract2 instead
     imgNoDock2 = SubtractDock2(origrot,corr,(v,h))
     sm.imsave("nodock2.png",imgNoDock2)
+
+    # Create FPF providing the number of filter images and the constraint matrix
+    filtB1 = MakeFPF(4,np.array([1,1,1,-1]))
+    corrB1 = FindBoats(imgNoDock2,filtB1)
+    sm.imsave("filtB1Ans.png",corrB1.real)
     
     
     
