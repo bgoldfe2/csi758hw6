@@ -72,3 +72,6 @@ def Edge( data ):
     a = data[:-1,:-1] - data[1:,1:]
     return abs(a)
 
+def Driver():
+    tach = sm.imread("tach.png",flatten=True)
+    
