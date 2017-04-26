@@ -5,14 +5,14 @@
 @author: bgoldfeder
 """
 
-import os,sys,cv2
+import os,sys
 import numpy as np
 import scipy.misc as sm
 import scipy.fftpack as ft
 import mgcreate as mg
 import fpf
 
-def LoadTach(fname):
+def LoadTach(fname,alpha):
     img = sm.imread(fname,flatten=True)
     V,H = img.shape
     X = np.zeros( (9,V*H), complex )
@@ -23,9 +23,10 @@ def LoadTach(fname):
     for i in range(0,9):
         iname = str(i)+".png"
         oname = str(i) + "b.png"
-        numb = BandW(iname,oname)
+        #numb = BandW(iname,oname)
+        numb = sm.imread(iname,flatten=True)
         out = mg.Plop(numb,(V,H))
-        #sm.imsave("numbers\\" + oname,out)
+        sm.imsave("numbers\\" + oname,out)
         X[i] = ft.fft2( out ).ravel()
 
     filt = fpf.FPF( X, cst, 0)
@@ -62,16 +63,27 @@ def Correlate2d( A,B ):
         return C
     
 
-def BandW(fname,outname):
-    img = cv2.imread(fname,0)    
-    ret,thresh1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY_INV)    
+#def BandW(fname,outname):
+    #img = cv2.imread(fname,0)    
+    #ret,thresh1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY_INV)    
     #cv2.imwrite(outname,thresh1)    
-    return thresh1
+#    return thresh1
 
 def Edge( data ):
     a = data[:-1,:-1] - data[1:,1:]
     return abs(a)
 
-def Driver():
+def Driver(alpha):
+    # Read in the original image and the number cutouts
     tach = sm.imread("tach.png",flatten=True)
+
+    # Create FPF filter and return grayscale image and FPF filter
+    # the second parameter is alpha for the FPF
+    img,filt = LoadTach("tach.png",alpha)
+
+    # Apply Edge Enhancements and Correlate
+    corr = FindNumbs(img,filt)
+
+    return corr.real
+    
     
